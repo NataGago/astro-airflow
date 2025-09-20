@@ -34,5 +34,16 @@ def user_processing():
             fake_user = None
         return PokeReturnValue(is_done=condition, xcom_value=fake_user)
 
-    is_api_available()
+    @task
+    def extract_user(fake_user):
+        return {
+            "id": fake_user["id"],
+            "firstname": fake_user["personalInfo"]["firstName"],
+            "lastname": fake_user["personalInfo"]["lastName"],
+            "email": fake_user["personalInfo"]["email"],
+        }
+
+    fake_user = is_api_available()
+    extract_user(fake_user)
+
 user_processing()
