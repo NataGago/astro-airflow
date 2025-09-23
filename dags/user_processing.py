@@ -70,6 +70,6 @@ def user_processing():
             filename="/usr/local/airflow/tmp/user_info.csv"
         )
 
-    create_table >> process_user(extract_user(is_api_available())) >> store_user()
+    process_user(extract_user(create_table >> is_api_available())) >> store_user()
 
 user_processing()
