@@ -43,7 +43,25 @@ def user_processing():
             "email": fake_user["personalInfo"]["email"],
         }
 
+    @task
+    def process_user(user_info):
+        # store info into a csv file called user_info.csv
+        import csv
+        import os
+
+        base_path = os.getcwd()
+        print(f"Current working directory: {base_path}")
+        # ensure the directory exists
+
+        path = f"{base_path}/tmp"        
+        os.makedirs(path, exist_ok=True)
+
+        with open(f"{path}/user_info.csv", mode="w", newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([user_info["id"], user_info["firstname"], user_info["lastname"], user_info["email"]])
+
     fake_user = is_api_available()
-    extract_user(fake_user)
+    user_info = extract_user(fake_user)
+    process_user(user_info)
 
 user_processing()
