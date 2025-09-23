@@ -1,6 +1,7 @@
 from airflow.sdk import dag, task
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.sdk.bases.sensor import PokeReturnValue
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 @dag
 def user_processing():
@@ -36,11 +37,13 @@ def user_processing():
 
     @task
     def extract_user(fake_user):
+        from datetime import datetime
         return {
             "id": fake_user["id"],
             "firstname": fake_user["personalInfo"]["firstName"],
             "lastname": fake_user["personalInfo"]["lastName"],
             "email": fake_user["personalInfo"]["email"],
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
     @task
@@ -55,14 +58,22 @@ def user_processing():
 
         path = f"{base_path}/tmp"        
         os.makedirs(path, exist_ok=True)
-
         with open(f"{path}/user_info.csv", mode="w", newline='') as file:
             writer = csv.DictWriter(file, fieldnames=user_info.keys())
             writer.writeheader()
             writer.writerow(user_info)
 
+    @task
+    def store_user():
+        hook = PostgresHook(postgres_conn_id="postgres")
+        hook.copy_expert(
+            sql="COPY users FROM STDIN WITH CSV HEADER",
+            filename="/usr/local/airflow/tmp/user_info.csv"
+        )
+
     fake_user = is_api_available()
     user_info = extract_user(fake_user)
     process_user(user_info)
+    store_user()
 
 user_processing()
