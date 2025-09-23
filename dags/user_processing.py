@@ -57,8 +57,9 @@ def user_processing():
         os.makedirs(path, exist_ok=True)
 
         with open(f"{path}/user_info.csv", mode="w", newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([user_info["id"], user_info["firstname"], user_info["lastname"], user_info["email"]])
+            writer = csv.DictWriter(file, fieldnames=user_info.keys())
+            writer.writeheader()
+            writer.writerow(user_info)
 
     fake_user = is_api_available()
     user_info = extract_user(fake_user)
